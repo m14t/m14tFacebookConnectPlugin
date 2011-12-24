@@ -1,0 +1,65 @@
+#) Add the behavior to the model:
+sfGuardUser:
+  actAs:
+    Facebookified:
+      fields:
+#       facebookColumn:         sfGuardUserColumn
+# Defaults -- you don't need to specify these unless you want to over ride them
+        id:             facebook_uid
+        username:       username
+        first_name:     first_name
+        last_name:      last_name
+# With no additional scope
+        name            Matt Pos Farmer
+        middle_name:    middle_name
+        gender:         gender
+        link:           facebook_link
+        hometown:       myhometown_col  #[ 'id' => ##, 'name' => 'City, State' ]
+        location:       setLocationFunction  #[ 'id' => ##, 'name' => 'City, State' ]
+        timezone:       timezone
+        languages:      languages       #[ ['id'=>##, 'name'=>'English'], ]
+        verified:       fb_verified
+# Documentation says that this requires scope: user_location, but appears with out it
+        location:       location
+# Documentation says that this requires scope: user_hometown, but appears with out it
+        hometown:       hometown
+
+# requires scope: email
+        email:          email_address
+# requires scope: user_birthday
+        birthday:       dob             # 01/01/1983
+
+# requires scope: user_education_history
+        education:      education       # [ [ 'school' => [ 'id' => ##, 'name' => 'asdf' ], 'year' => ['id'=>##, 'name'=>##], 'type' => 'High School|College' ], ]
+# requires scope: user_about_me
+        bio:            fb_about_me
+
+#) Any Facebook field that returns an object, you'll need to implement a function to handle / save it:
+
+lib/model/doctrine/sfDoctrineGuardPlugin/sfGuardUser.class.php
+  public function setLocation($loc, $force = true) {
+    list($city, $state) = explode(',', $loc->name, 2);
+    if ( $force || "" == $this['city'] ) {
+      $this['city']  = trim($city);
+    }
+    if ( $force || "" == $this['state'] ) {
+      $this['state'] = trim($state);
+    }
+  }
+
+#) Extend the user
+
+apps/frontend/lib/myUser.class.php
+class myUser extends m14tFacebookUser
+
+#) Add code similar to the following to your signup action
+
+$with_facebook = ("true" == $request->getParameter('with_facebook', false));
+if ( $with_facebook ) {
+  //-- If we're with facebook, request info and populate sfGuardUser
+  //   If no sfGuadUser is present, this will create one.
+  $sfGuardUser = $user->populateFromFacebook();
+  if ( $sfGuardUser->isComplete() ) {
+    $this->redirect($this->facebookUserRedirect);
+  }
+}

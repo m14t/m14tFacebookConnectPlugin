@@ -1,0 +1,6 @@
+sfGuardUser:
+  actAs:
+    Facebookified: ~
+  columns:
+    facebook_auth_code: { type: string(255) }
+    facebook_uid:       { type: integer(20) }
